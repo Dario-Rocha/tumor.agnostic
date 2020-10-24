@@ -49,6 +49,13 @@ shinyUI(fluidPage(
            
            hr(),
            
+           h1("Load packages"),
+           p("Check and load the needed libraries. If the needed libraries are not properly installed and loaded, the app will fail. You may need to manually install the libraries listed in the readme."),
+           actionButton("check.libraries", "Check and load packages"),
+           textOutput("check.libraries"),
+           
+           hr(),
+           
            h1("Run program"),
            
            p("Processing time may take a long time depending on the number of samples, twenty minutes for 300 samples is expectable."),

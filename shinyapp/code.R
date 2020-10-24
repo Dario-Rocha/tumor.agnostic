@@ -1,17 +1,63 @@
-f_code<- function(a.exp, a.surv, a.custom.sig, a.annot.is.symbol, a.custom.sig.symbol){
-  library(openxlsx)
-  library(AnnotationDbi)
-  library(org.Hs.eg.db)
-  library(plyr)
-  library(pbcmc)
-  library(BiocParallel) #sino pbcmc no funciona aunque no lo use
-  library(limma)
-  library(ggplot2)
-  library(ggpubr)
-  library(patchwork)
-  library(survival)
-  library(survminer)
+#INSTALL LIBRARIES----
+
+#function to install libraries
+f_libraries<- function(){
+  #cran packages
+  cran.packages<- c("openxlsx",
+                    "plyr",
+                    "ggplot2",
+                    "ggpubr",
+                    "patchwork",
+                    "survival",
+                    "survminer")
   
+  for(aux.pack in cran.packages){
+    if(!require(aux.pack, character.only = TRUE)) install.packages(aux.pack)
+    library(aux.pack,character.only = TRUE)
+  }
+  rm(aux.pack)
+
+  #bioconductor packages
+  if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+  
+  bioc.packages<- c("AnnotationDbi",
+                    "org.Hs.eg.db",
+                    "limma",
+                    "BiocParallel")
+  for(aux.pack in bioc.packages){
+    if(!require(aux.pack, character.only = TRUE)){
+      BiocManager::install(bioc.packages)
+    } 
+    library(aux.pack,character.only = TRUE)
+  }
+  rm(aux.pack)
+
+  #pbcmc package
+  if(!require("pbcmc", character.only = TRUE)){
+    source("http://bioconductor.org/biocLite.R")
+    biocLite("pbcmc")
+  }
+  
+  message<- "All libraries seem to be present, properly loaded and installed"
+  
+  return(message)
+}
+
+#function to check if installation was successful
+f_check_libraries<- function(){
+  message<- tryCatch({
+    f_libraries()
+  }, error = function(e) {
+    "There was an error when installing or loading libraries, please manually check if they are all properly installed"
+  })
+  
+  return(message)
+}
+
+
+f_code<- function(a.exp, a.surv, a.custom.sig, a.annot.is.symbol, a.custom.sig.symbol){
+
   a.results<- list()
   
   #A)DATA----

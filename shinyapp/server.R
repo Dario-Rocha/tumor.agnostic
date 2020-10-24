@@ -1,4 +1,4 @@
-#F)SHINY APP----
+#SHINY APP----
 library(shiny)
 
 options(shiny.maxRequestSize=100*1024^2)
@@ -6,7 +6,7 @@ options(shiny.maxRequestSize=100*1024^2)
 shinyServer(function(input, output) {
   source("code.R")$value
   
-  #A)PARAMETERS----
+  #PARAMETERS----
   #TRUE if gene annotation is symbol, FALSE if gene annotation is entrezid
   annot.symbol<- reactive({
     ifelse(input$expression.gene.annotation == "SYMBOL", TRUE, FALSE)
@@ -36,7 +36,7 @@ shinyServer(function(input, output) {
     }
   })
   
-  #A)DATA----
+  #DATA----
   #expression
   exp<- reactive({
     read.xlsx(input$expression.data$datapath)
@@ -60,8 +60,22 @@ shinyServer(function(input, output) {
       NULL
     }
   })
+  
+  #CHECK LIBRARIES----
+  check.libraries <- eventReactive(input$check.libraries, {
 
-  #B)RUN CODE----
+    showModal(modalDialog("Checking, installing and loading libraries", footer = NULL))
+
+    check.libraries <- f_check_libraries()
+
+    removeModal()
+
+    return(check.libraries)
+  })
+
+  output$check.libraries<- renderText(check.libraries())
+
+  #RUN CODE----
   results <- eventReactive(input$run, {
     
     showModal(modalDialog("Running, may take up to 30 minutes depending on the number of samples", footer=NULL))
@@ -78,6 +92,7 @@ shinyServer(function(input, output) {
   })
   
   #C)OUTPUTS----
+
   output$missing.genes<- renderText(results()$missing.genes)
   output$performance<-  renderText(results()$performance)
   output$classres<- renderText(results()$missingclass)
