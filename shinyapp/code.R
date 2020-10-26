@@ -39,7 +39,7 @@ f_libraries<- function(){
     biocLite("pbcmc")
   }
   
-  message<- "All libraries seem to be present, properly loaded and installed"
+  message<- "All libraries seem to be present, properly installed and loaded"
   
   return(message)
 }
@@ -161,7 +161,7 @@ f_code<- function(a.exp, a.surv, a.custom.sig, a.annot.is.symbol, a.custom.sig.s
   b.pam50object<- PAM50(exprs = a.elist$E, annotation = a.elist$genes)
   b.filtratedobject<- filtrate(b.pam50object)
   b.classifiedobject<- classify(b.filtratedobject, std = "median")
-  b.permutatedobject<- permutate(b.classifiedobject, nPerm=100, pCutoff=0.01, where="fdr",
+  b.permutatedobject<- permutate(b.classifiedobject, nPerm=1000, pCutoff=0.01, where="fdr",
                                  corCutoff=0.1, keep=FALSE, verbose=TRUE,
                                  BPPARAM=bpparam())
   
@@ -413,7 +413,7 @@ f_code<- function(a.exp, a.surv, a.custom.sig, a.annot.is.symbol, a.custom.sig.s
                             pval = TRUE, risk.table = TRUE, palette = c("#005397", "#96BEDF", "#E58031", "#FFC08F"),
                             title = "Combined model")
     
-    aux.plot<- wrap_plots(aux.ggsurv$plot, aux.ggsurv$table, ncol=1, heights= c(4, 1))
+    aux.plot<- wrap_plots(aux.ggsurv$plot, aux.ggsurv$table, ncol=1, heights= c(3.5, 1))
     
     return(aux.plot)
   }
@@ -440,8 +440,8 @@ f_code<- function(a.exp, a.surv, a.custom.sig, a.annot.is.symbol, a.custom.sig.s
   #inform comparison results
   if(a.surv.provided & !b.somesamples & a.custom.marker){
     #create table output
-    e.compar.inform<- data.frame(c("Custom marker univariate log-likelihood",
-                                   "Combined markers log-likelihood",
+    e.compar.inform<- data.frame(c("Custom classification univariate log-likelihood",
+                                   "Combined classifications log-likelihood",
                                    "Interaction coefficient p-value",
                                    "Analysis of Deviance p-value"
     ),
