@@ -16,12 +16,18 @@ shinyUI(fluidPage(
     column(12,
            
            titlePanel("C1C2 classification explorer"),
+           p("Upload an .xlsx file with subjects in columns and genes in rows</br>
+             The first element of the first row must be either SYMBOL or ENTREZID, 
+             and the first column must contain either SYMBOL or ENTREZID gene identifiers accordingly</br>
+             The remaining elements of the first row are the sample identifiers and must be unique</br>
+             The expression data must be properly normalized within samples and expressed in a logarithimc scale"),
+           uiOutput("run.button"),
            verbatimTextOutput("lib.msg"),
            verbatimTextOutput("data.msg"),
            fileInput(inputId= "expression.data", label= NULL),
            verbatimTextOutput("exp.msg"),
            verbatimTextOutput("gene.presence.msg"),
-           actionButton("classify", "Run"),
+
            uiOutput("download.table"),
            tableOutput("class.props"),
            plotOutput("plot", width="800px"),

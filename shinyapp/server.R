@@ -3,38 +3,12 @@ library(shiny)
 
 options(shiny.maxRequestSize=100*1024^2)
 
+
 shinyServer(function(input, output) {
   source("code.R")$value
   
-  #A) PARAMETERS----
-  #TRUE if gene annotation is symbol, FALSE if gene annotation is entrezid
-  annot.symbol<- reactive({
-    ifelse(input$expression.gene.annotation == "SYMBOL", TRUE, FALSE)
-  })
-  
-  #TRUE if survival data was provided
-  survdata<- reactive({
-    !is.null(input$survival.data)
-  })
-  
-  #TRUE if custom marker was provided
-  custom.marker<- reactive({
-    "custom_marker" %in% colnames()
-  })
-  
-  #TRUE if a custom signature was provided
-  custom.sig<- reactive({
-    !is.null(input$custom.signature.data)
-  })
-  
-  #TRUE if custom signature is symbol
-  custom.is.symbol<- reactive({
-    if(custom.sig()){
-      ifelse(input$signature.gene.annotation == "SYMBOL", TRUE, FALSE)
-    } else {
-      NULL
-    }
-  })
+  #modal preloading open----
+  showModal(modalDialog("Attempting to load libraries and signatures", footer=NULL))
   
   #B)LIBRARIES----
   #define libraries to be loaded
@@ -94,9 +68,18 @@ shinyServer(function(input, output) {
   c.data.msg<- paste(c.pam50.msg, c.sig.msg, sep="\n")
   output$data.msg<- renderText(c.data.msg)
   
+  #modal preloading close----
+  removeModal()
+  
   #expression----
   c.exp<- reactive({
     f_check_exp(read.xlsx(input$expression.data$datapath))
+  })
+  
+  #run button conditional----
+  output$run.button <- renderUI({
+    req(input$expression.data)
+    actionButton("run.button", "Classify and Analyze")
   })
   
   #check signatures in expression
@@ -188,12 +171,5 @@ shinyServer(function(input, output) {
   #output plot----
   output$plot<- renderPlot(f.plot())
 
-
-  #test output----
-  output$test1<- reactive({
-    req(e.new.targets(), f.plot())
-    class(f.plot())
-    
-    })
   
 })
