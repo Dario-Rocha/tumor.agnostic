@@ -1,60 +1,298 @@
-#INSTALL LIBRARIES----
-
-#function to install libraries
-f_libraries<- function(){
-  #cran packages
-  cran.packages<- c("openxlsx",
-                    "plyr",
-                    "ggplot2",
-                    "ggpubr",
-                    "patchwork",
-                    "survival",
-                    "survminer")
-  
-  for(aux.pack in cran.packages){
-    if(!require(aux.pack, character.only = TRUE)) install.packages(aux.pack)
-    library(aux.pack,character.only = TRUE)
-  }
-  rm(aux.pack)
-
-  #bioconductor packages
-  if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-  
-  bioc.packages<- c("AnnotationDbi",
-                    "org.Hs.eg.db",
-                    "limma",
-                    "BiocParallel")
-  for(aux.pack in bioc.packages){
-    if(!require(aux.pack, character.only = TRUE)){
-      BiocManager::install(bioc.packages)
-    } 
-    library(aux.pack,character.only = TRUE)
-  }
-  rm(aux.pack)
-
-  #pbcmc package
-  if(!require("pbcmc", character.only = TRUE)){
-    source("http://bioconductor.org/biocLite.R")
-    biocLite("pbcmc")
+#A)LOAD LIBRARIES----
+f_load_libs<- function(libraries){
+  load.msg<- list()
+  for(aux.lib in libraries){
+    
+    #load and print message
+    aux.msg<- tryCatch({
+      library(aux.lib, character.only = TRUE)
+      paste0(aux.lib, " was correctly loaded")
+    }, error = function(e){
+      paste0("there was an error when loading ", aux.lib)
+    })
+    
+    load.msg[[aux.lib]]<- aux.msg
   }
   
-  message<- "All libraries seem to be present, properly installed and loaded"
-  
-  return(message)
+  return(load.msg)
 }
 
-#function to check if installation was successful
-f_check_libraries<- function(){
-  message<- tryCatch({
-    f_libraries()
-  }, error = function(e) {
-    "There was an error when installing or loading libraries, please manually check if they are all properly installed"
+#B)CHECK EXPRESSION----
+f_annot_act<- function(symbol.vec){
+  entrezids1 <- mapIds(org.Hs.eg.db, keys=symbol.vec, column="ENTREZID", keytype="SYMBOL", multiVals="first")
+  entrezids2<- mapIds(org.Hs.eg.db, keys=symbol.vec, column="ENTREZID", keytype="ALIAS", multiVals="first")
+  entrez<- ifelse(is.na(entrezids1), entrezids2, entrezids1)
+  entrez[sapply(entrez, is.null)]<- NA
+  entrez<- unlist(entrez)
+  return(entrez)
+}
+
+#check, convert and avereps
+#returns formatted matrix and action log
+f_check_exp<- function(exp.xlsx){
+  #save object
+  aux.results<- list()
+  
+  #format expression
+  aux.results$exp<- as.matrix(exp.xlsx[,-1])
+  storage.mode(aux.results$exp) <- "numeric"
+  
+  #create gene annotation
+
+  #if symbol, convert to entrezid
+  if(colnames(exp.xlsx)[1] == "SYMBOL"){
+    aux.annot<- tryCatch({
+      f_annot_act(exp.xlsx$SYMBOL)
+    }, error = function(e){
+      "update.error"
+    })
+      
+  } else if(colnames(exp.xlsx == "ENTREZID")){
+    aux.annot<- exp.xlsx$ENTREZID
+  }
+  
+  #remove missing genes
+  present.index<- !is.na(aux.annot)
+  
+  aux.results$exp<- aux.results$exp[present.index,]
+  aux.annot<- aux.annot[present.index]
+  
+  #avereps
+  row.names(aux.results$exp)<- aux.annot
+  aux.results$exp<- tryCatch({
+    avereps(aux.results$exp, ID = aux.annot)
+  }, error = function(e){
+    "error.avereps"
+  })
+    
+  #write action log
+  #check if the column was provided as asked
+  aux.results$annot.found<- "Could not find gene annotation, make sure the input file is properly formated"
+  
+  if(colnames(exp.xlsx)[1] == "SYMBOL"){
+    aux.results$annot.found <- "SYMBOL gene annotation detected"
+  }
+  
+  if(colnames(exp.xlsx)[1] == "ENTREZID"){
+    aux.results$annot.found <- "ENTREZID gene annotation detected"
+  }
+  
+  #inform annotation conversion
+  if(colnames(exp.xlsx)[1] == "SYMBOL" & aux.annot[1] == "update.error"){
+    aux.results$annot.convert<- "There was an error when trying to convert SYMBOL to ENTREZID"
+  }
+
+  if(colnames(exp.xlsx)[1] == "SYMBOL" & aux.annot[1] != "update.error"){
+    aux.results$annot.convert<- "SYMBOL converted to ENTREZID using org.Hs.eg.db"
+  }
+  
+  #inform postprocessing
+  aux.results$gene.delete<- "Genes with missing ENTREZID were removed"
+  
+  #inform avereps
+  aux.results$avereps<- "Genes with duplicated identifiers were averaged"
+  
+  if(aux.results$exp[1] == "error.avereps"){
+    aux.results$avereps<- "There was an error when trying to average repeated genes, maybe there weren not enough valid genes"
+  }
+  
+  #combine text text
+  aux.results$msg<- do.call(paste, c(aux.results[-1], sep="\n"))
+
+  return(aux.results)
+}
+
+#function to check the number of signature genes found in the expression
+#returns a message
+f_check_signatures<- function(exp.data, signatures.list){
+
+  aux.n<- list()
+  for(aux.sig in names(signatures.list)){
+    present<- sum(signatures.list[[aux.sig]] %in% row.names(exp.data))
+    total<- length(signatures.list[[aux.sig]])
+    
+    aux.n[[aux.sig]]<- paste(present,
+                             "of",
+                             total,
+                             aux.sig,
+                             "genes present in the expression data")
+
+  }
+  
+  aux.msg<- do.call(paste, c(aux.n, sep="\n"))
+  
+  return(aux.msg)
+}
+
+#C)CLASSIFY AND ANALYZE----
+#function to generate the classification
+#returns targets
+f_classify<- function(exp.data){
+  
+  #create pbcmc formatted annotation
+  pbcmc.annot<- data.frame("probe"= rownames(exp.data),
+                           "EntrezGene.ID"= rownames(exp.data),
+                           "NCBI.gene.symbol"= NA,
+                           stringsAsFactors = FALSE)
+  
+  row.names(pbcmc.annot)<- pbcmc.annot$probe
+  
+  #apply pbcmc
+  pam50object<- PAM50(exprs = exp.data, annotation = pbcmc.annot)
+  filtratedobject<- filtrate(pam50object)
+  classifiedobject<- classify(filtratedobject, std = "median")
+  permutatedobject<- permutate(classifiedobject, nPerm=100, pCutoff=0.01, where="fdr",
+                                 corCutoff=0.1, keep=FALSE, verbose=TRUE,
+                                 BPPARAM=bpparam())
+  
+  #create targets
+  targets<- data.frame("identifier"= colnames(exp.data),
+                       "pam50"= as.character(permutatedobject@permutation$subtype$PAM50),
+                       "class"= as.character(permutatedobject@permutation$subtype$Class),
+                       stringsAsFactors = FALSE)
+  
+  #format targets
+  targets$class[targets$class == "LumA"]<- "C1"
+  targets$class[which(targets$class %in% c("Basal", "Her2", "LumB"))]<- "C2"
+  targets$class[targets$class == "Normal"]<- "unassigned"
+  targets$class[is.na(targets$class)]<- "unassigned"
+  
+  targets$pam50[targets$pam50=="Her2"]<- "Her2e"
+
+  return(targets)
+}
+
+#classification summary
+f_class_sum<- function(class.vector){
+  
+  #counts and props
+  counts<-  c("C1"= sum(class.vector == "C1"),
+              "C2"= sum(class.vector == "C2"),
+              "Unassigned"= sum(class.vector == "unassigned"))
+  
+  props<- round(100* counts/length(class.vector), 2)
+  
+  #make table
+  text.content<- paste0(counts, " (", props, "%)")
+  
+  table.res<- data.frame("Class"= c("C1", "C2", "Unassigned"),
+                         "Frequency"= text.content)
+
+  
+  return(table.res)
+}
+
+#D)SIGNATURES----
+f_sigscores_ca20<- function(gene.vector, expression.matrix){
+  
+  #centrar y escalar la base
+  aux.expr<- expression.matrix-median(expression.matrix, na.rm=TRUE)
+  aux.expr<- aux.expr/sd(aux.expr, na.rm=TRUE)
+  
+  #recortar genes
+  aux.genes<- as.character(intersect(row.names(aux.expr), gene.vector))
+  aux.expr<- aux.expr[aux.genes,]
+  
+  #calcular los scores por suma
+  aux.scores<- colSums(aux.expr, na.rm=TRUE)
+  summary(aux.scores)
+  
+  #objeto salida
+  aux.salida<- data.frame("identifier"= colnames(expression.matrix),
+                          "sigscore"= aux.scores, stringsAsFactors = FALSE)
+  
+  return(aux.salida)
+}
+
+f_sigscores<- function(gene.vector, expression.matrix){
+  
+  #recortar genes
+  aux.genes<- as.character(intersect(row.names(expression.matrix), gene.vector))
+  aux.expr<- expression.matrix[aux.genes,]
+  
+  #estandarizar genes
+  aux.expr<- t(scale(t(aux.expr)))
+  
+  #calcular score por promedio
+  aux.scores<- colMeans(aux.expr, na.rm=TRUE)
+  
+  #objeto salida
+  aux.salida<- data.frame("identifier"= colnames(expression.matrix),
+                          "sigscore"= aux.scores, stringsAsFactors = FALSE)
+  
+  return(aux.salida)
+}
+
+#expression has rownames as entrezid
+#expression columns match target identifiers
+#targets has colnames identifier and class
+#signatures is a list of character vectors with entrezid
+#CA20 is one of the signatures
+f_sigscore_wrap<- function(expression.data, targets.data, signature.list){
+  
+  #select classified only
+  aux.index<- which(targets.data$class %in% c("C1", "C2"))
+  aux.exp<- expression.data[, aux.index]
+  
+  #calculate generic sigscores
+  scores.list<- lapply(signature.list, function(one.signature){
+    f_sigscores(gene.vector = one.signature, expression.matrix = aux.exp)
   })
   
-  return(message)
+  #calculate CA20 separately
+  scores.list$CA20<- f_sigscores_ca20(gene.vector = signature.list$CA20, expression.matrix = aux.exp)
+  
+  #rename columns
+  for(aux.name in names(scores.list)){
+    colnames(scores.list[[aux.name]])[2]<- aux.name
+  }
+
+  #combine with targets
+  new.targets<- plyr::join_all(scores.list, by="identifier", type="full")
+  new.targets<- join(targets.data, new.targets, by="identifier", type="full")
+  
+  return(new.targets)
 }
 
+#E)PLOTS----
+#can only handle two classes
+f_plot<- function(sig.name, targets.table){
+  error.plot<- ggplot() + 
+    annotate(geom = 'text', 
+             x=1, 
+             y=1, 
+             label= paste0("Could not analyze ", sig.name, "\nmaybe there are insufficient classified samples"), 
+             size = 4) + 
+    theme_void()
+  
+  el.plot<- tryCatch({
+    
+    ggboxplot(targets.table, x = "class", y = sig.name,
+              color = "class", 
+              palette = c("C1"="#005397", "C2"="#E58031"),
+              add = "jitter") + stat_compare_means(method = "wilcox.test")
+    
+  }, error = function(e){
+    error.plot
+  })
+  
+  return(el.plot)
+}
+
+f_plot_wrap<- function(sig.list, targets){
+  
+  this.targets<- targets[which(targets$class %in% c("C1", "C2")),]
+  
+  signames<- intersect(names(sig.list), colnames(this.targets))
+  
+  plotlist<- lapply(signames, function(one.sig){
+    f_plot(sig.name = one.sig, targets.table = this.targets)
+  })
+  
+  plotfin<- wrap_plots(plotlist, ncol=3, guides = "collect")
+  
+  return(plotfin)
+}
 
 f_code<- function(a.exp, a.surv, a.custom.sig, a.annot.is.symbol, a.custom.sig.symbol){
 
@@ -206,51 +444,9 @@ f_code<- function(a.exp, a.surv, a.custom.sig, a.annot.is.symbol, a.custom.sig.s
   
   #C)SIGNATURE SCORES----
   #c.functions----
-  f_sigscores_ca20<- function(aux.sig, aux.cancer){
-    
-    #centrar y escalar la base
-    #para que sea comparable entre bases
-    aux.expr<- aux.cancer$E-median(aux.cancer$E, na.rm=TRUE)
-    aux.expr<- aux.expr/sd(aux.expr, na.rm=TRUE)
-    
-    #recortar genes
-    row.names(aux.expr)<- aux.cancer$genes$entrezid
-    aux.genes<- intersect(row.names(aux.expr), aux.sig)
-    aux.expr<- aux.expr[aux.genes,]
-    
-    #calcular los scores por suma
-    aux.scores<- colSums(aux.expr, na.rm=TRUE)
-    summary(aux.scores)
-    
-    #objeto salida
-    aux.salida<- data.frame("identifier"= colnames(aux.cancer$E),
-                            "sigscore"= aux.scores, stringsAsFactors = FALSE)
-    
-    return(aux.salida)
-  }
   
-  f_sigscores<- function(aux.sig, aux.cancer){
-    
-    #extraer expresión
-    aux.expr<- aux.cancer$E
-    
-    #recortar genes
-    row.names(aux.expr)<- aux.cancer$genes$entrezid
-    aux.genes<- intersect(row.names(aux.expr), aux.sig)
-    aux.expr<- aux.expr[aux.genes,]
-    
-    #estandarizar genes
-    aux.expr<- t(scale(t(aux.expr)))
-    
-    #calcular score por promedio
-    aux.scores<- colMeans(aux.expr, na.rm=TRUE)
-    
-    #objeto salida
-    aux.salida<- data.frame("identifier"= colnames(aux.cancer$E),
-                            "sigscore"= aux.scores, stringsAsFactors = FALSE)
-    
-    return(aux.salida)
-  }
+  
+  
   
   #c.sigscores----
   if(!b.nosamples){
