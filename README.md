@@ -10,8 +10,6 @@ To run it locally, open the ui.R in RStudio and click on the "RunApp" at the top
 * ggplot2 
 * ggpubr
 * patchwork
-* survival
-* survminer
 * AnnotationDbi
 * org.Hs.eg.db
 * limma
