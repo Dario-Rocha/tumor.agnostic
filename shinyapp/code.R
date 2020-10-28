@@ -141,7 +141,7 @@ f_classify<- function(exp.data){
   pam50object<- PAM50(exprs = exp.data, annotation = pbcmc.annot)
   filtratedobject<- filtrate(pam50object)
   classifiedobject<- classify(filtratedobject, std = "median")
-  permutatedobject<- permutate(classifiedobject, nPerm=100, pCutoff=0.01, where="fdr",
+  permutatedobject<- permutate(classifiedobject, nPerm=1000, pCutoff=0.01, where="fdr",
                                  corCutoff=0.1, keep=FALSE, verbose=TRUE,
                                  BPPARAM=bpparam())
   
