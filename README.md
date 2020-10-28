@@ -20,7 +20,7 @@
 * BiocParallel 
 * pbcmc
 
-#### If some of the packages are not installed, try to paste and run the following code in RStudio console
+#### If some of the packages are not installed, try to paste and run the following code in R or RStudio
 ````
 #install BiocManager
 if (!requireNamespace("BiocManager", quietly = TRUE))
