@@ -18,7 +18,7 @@
 * org.Hs.eg.db
 * limma
 * BiocParallel 
-* pbcmc
+* pbcmc *you may need to manually download and install this package from [PBCMC Bioconductor page](https://bioconductor.riken.jp/packages/3.3/bioc/html/pbcmc.html)*
 
 #### If some of the packages are not installed, try to paste and run the following code in R or RStudio
 ````
@@ -46,12 +46,6 @@ for(aux.pack in aux.list){
 }
 
 rm(aux.pack, aux.list)
-
-#install PBCMC
-if(!require("pbcmc", character.only = TRUE)){
-  source("http://bioconductor.org/biocLite.R")
-  biocLite("pbcmc")
-}
 ````
 ### Open the ui.R file in RStudio and click on "Run app" to start the application
 A new window should pop up with further instructions
