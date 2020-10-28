@@ -53,7 +53,7 @@ if(!require("pbcmc", character.only = TRUE)){
   biocLite("pbcmc")
 }
 ````
-### Click on "Run app" to start the application
+### Open the ui.R file in RStudio and click on "Run app" to start the application
 A new window should pop up with further instructions
 ![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/runapp.jpg)
 
