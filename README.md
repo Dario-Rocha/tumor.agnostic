@@ -1,10 +1,14 @@
-# tumor.agnostic
+# C1C2 classification explorer Shiny app
 
-## Installing the Shinyapp:
+## Installation
 
-To run it locally, open the ui.R in RStudio and click on the "RunApp" at the top-right corner of the Source Editor pane.
+### Download the app
+![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/download.jpg?raw=true)
 
-## Required packages:
+### Unzip the downloaded file and verify that the directory structure is like this
+![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/structure.jpg?raw=true)
+
+### Open RStudio and verify that the following packages are properly installed
 * openxlsx 
 * plyr 
 * ggplot2 
@@ -16,6 +20,42 @@ To run it locally, open the ui.R in RStudio and click on the "RunApp" at the top
 * BiocParallel 
 * pbcmc
 
+#### If some of the packages are not installed, try to paste and run the following code in R or RStudio
+````
+#install BiocManager
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+#install required packages
+aux.list<- c("openxlsx",
+             "ggplot2",
+             "ggpubr",
+             "plyr",
+             "patchwork", 
+             "AnnotationDbi",
+             "limma",
+             "org.Hs.eg.db",
+             "BiocParallel")
+
+for(aux.pack in aux.list){
+  if(!require(aux.pack, character.only = TRUE)){
+    
+    BiocManager::install(aux.pack, dependencies = TRUE)
+    
+  }
+}
+
+rm(aux.pack, aux.list)
+
+#install PBCMC
+if(!require("pbcmc", character.only = TRUE)){
+  source("http://bioconductor.org/biocLite.R")
+  biocLite("pbcmc")
+}
+````
+### Open the ui.R file in RStudio and click on "Run app" to start the application
+A new window should pop up with further instructions
+![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/runapp.jpg)
 
 ## Authors
 
