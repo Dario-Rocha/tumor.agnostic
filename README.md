@@ -18,7 +18,7 @@
 * org.Hs.eg.db
 * limma
 * BiocParallel 
-* pbcmc *you may need to manually download and install this package from [PBCMC Bioconductor page](https://bioconductor.riken.jp/packages/3.3/bioc/html/pbcmc.html)*
+* pbcmc (*you may need to manually download and install this package from [PBCMC Bioconductor page](https://bioconductor.riken.jp/packages/3.3/bioc/html/pbcmc.html)*)
 
 #### If some of the packages are not installed, try to paste and run the following code in R or RStudio
 ````
