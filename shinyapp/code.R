@@ -47,7 +47,7 @@ f_check_exp<- function(exp.xlsx){
       "update.error"
     })
       
-  } else if(colnames(exp.xlsx == "ENTREZID")){
+  } else if(colnames(exp.xlsx)[1] == "ENTREZID"){
     aux.annot<- exp.xlsx$ENTREZID
   }
   

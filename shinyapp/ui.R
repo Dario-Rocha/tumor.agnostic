@@ -8,8 +8,6 @@
 #
 
 library(shiny)
-
-# Define UI for application that draws a histogram
 shinyUI(fluidPage(
   
   titlePanel(
@@ -51,8 +49,7 @@ shinyUI(fluidPage(
            
            verbatimTextOutput("lib.msg"),
            verbatimTextOutput("data.msg"),
-           verbatimTextOutput("exp.msg"),
-           verbatimTextOutput("gene.presence.msg")
+           verbatimTextOutput("exp.msg")
     )
   ),
     
@@ -61,7 +58,8 @@ shinyUI(fluidPage(
     h2("Results", align = "center"),
     
     
-    column(8, align="center",
+    column(12, align="center",
+           verbatimTextOutput("gene.presence.msg"),
            tableOutput("class.props"),
            plotOutput("plot", width="800px")  
     )
