@@ -116,7 +116,7 @@ shinyServer(function(input, output) {
   output$gene.presence.msg<-  renderText(c.sig.exp()) 
   
   #D)CLASSIFY----
-  d.class.table<- eventReactive(input$classify, {
+  d.class.table<- eventReactive(input$run.button, {
     
     showModal(modalDialog("Running, may take a long time depending on the number of samples. For the example data it should take less than 3 minutes.", footer=NULL))
     
@@ -171,5 +171,4 @@ shinyServer(function(input, output) {
   #output plot----
   output$plot<- renderPlot(f.plot())
 
-  
 })
