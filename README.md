@@ -1,13 +1,14 @@
-# tumor.agnostic
+# C1C2 classification explorer Shiny app
 
-## Installation:
+## Installation
+
 ### Download the app
 ![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/download.jpg?raw=true)
 
 ### Unzip the downloaded file and verify that the directory structure is like this
 ![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/structure.jpg?raw=true)
 
-### Open RStudio and verify that the following packages are properly installed:
+### Open RStudio and verify that the following packages are properly installed
 * openxlsx 
 * plyr 
 * ggplot2 
