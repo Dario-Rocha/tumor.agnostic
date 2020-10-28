@@ -3,11 +3,11 @@
 ## Installing the Shinyapp:
 
 ## test
-Download the app
-![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/download.jpg?raw=true)
+Download the app</br>
+![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/download.jpg?raw=true)</br>
 
-unzip the downloaded file and verify that the directory structure is like this
-![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/structure.jpg?raw=true)
+unzip the downloaded file and verify that the directory structure is like this</br>
+![](https://github.com/Dario-Rocha/tumor.agnostic/blob/main/readme_images/structure.jpg?raw=true)</br>
 
 To run it locally, open the ui.R in RStudio and click on the "RunApp" at the top-right corner of the Source Editor pane.
 
